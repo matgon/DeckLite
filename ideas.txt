@@ -1,0 +1,18 @@
+Roguelike deckbuilding.
+
+Rondas con enemigos.
+
+4 tipos de enemigos:
+    zombie
+    esqueleto
+    araña
+    slime
+
+cada enemigo tiene vida, ataque, mana, habilidades, drops.
+
+cada enemigo tiene un peso de dificultad.
+la dificultad va subiendo con cada ronda que se avance.
+el jugador se podra retirar cuando desee.
+Si el jugador se retira pierde un 50% de recursos.
+
+al empezar una run, el jugador elige 5 cartas para su deck
