@@ -20,6 +20,7 @@ class Player(Entity):
         self.img = self.imgs[0]
 
         self.tile = None
+        self.next_tile = None
         self.hp = hp
         self.attk = attk
         self.dck = dck
@@ -45,20 +46,24 @@ class Player(Entity):
         return self.drop
     
     def set_tile(self, tile):
+        if self.tile is not None:
+            self.tile.set_player_in_tile(False)
         self.tile = tile
         self.x = tile.x + tile.width/2
         self.y = tile.y + tile.height/2 - self.img.get_size()[1]
         tile.set_player_in_tile(True)
     
     def set_path(self, path):
+        if self.next_tile is not None:
+            self.next_tile.set_player_in_tile(False)
         self.path = path if path is not None else list()
 
     def set_selected_tile(self, tile):
         self.selected_tile = tile
     
-    def set_facing_dir(self, next_tile):
-        x = next_tile.tileID[0] - self.tile.tileID[0]
-        y = next_tile.tileID[1] - self.tile.tileID[1]
+    def set_facing_dir(self):
+        x = self.next_tile.tileID[0] - self.tile.tileID[0]
+        y = self.next_tile.tileID[1] - self.tile.tileID[1]
 
         if x == -1:
             if y == -1:
@@ -83,20 +88,15 @@ class Player(Entity):
     def move(self, grid):
         if len(self.path) > 0:
             self.tile.set_player_in_tile(False)
-            next_tile = grid.get_tile(self.path[0][0], self.path[0][1])
-            self.set_facing_dir(next_tile)
-            self.x = self.x * (1 - self.speed) + (next_tile.x + next_tile.width/2) * (0 + self.speed)
-            self.y = self.y * (1 - self.speed) + (next_tile.y + next_tile.height/2 - self.img.get_size()[1]) * (0 + self.speed)
-            next_tile.set_player_in_tile(True)
+            self.next_tile = grid.get_tile(self.path[0][0], self.path[0][1])
+            self.set_facing_dir()
+            self.x = self.x * (1 - self.speed) + (self.next_tile.x + self.next_tile.width/2) * (0 + self.speed)
+            self.y = self.y * (1 - self.speed) + (self.next_tile.y + self.next_tile.height/2 - self.img.get_size()[1]) * (0 + self.speed)
+            self.next_tile.set_player_in_tile(True)
 
-            if round(self.x) == (next_tile.x + next_tile.width/2) and round(self.y) == (next_tile.y + next_tile.height/2 - self.img.get_size()[1]):
-                self.tile.set_player_in_tile(False)
-                self.tile = next_tile
-                #self.tile.set_player_in_tile(True)
+            if round(self.x) == (self.next_tile.x + self.next_tile.width/2) and round(self.y) == (self.next_tile.y + self.next_tile.height/2 - self.img.get_size()[1]):
+                self.set_tile(self.next_tile)
                 self.path.pop(0)
-        # if self.selected_tile is not None:
-        #     self.x = self.x * (1 - self.speed) + self.selected_tile[0] * (0 + self.speed)
-        #     self.y = self.y * (1 - self.speed) + self.selected_tile[1] * (0 + self.speed)
     
     def draw(self, screen: pygame.Surface, camera_x, camera_y, camera_zoom):
         # self.tick += 1

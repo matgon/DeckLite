@@ -17,6 +17,8 @@ class Grid():
 
         tile_width = 40
         tile_height = 20
+        def sort_graph(item, coord):
+            return abs(coord[0] - item[0]) + abs(coord[1] - item[1]) 
         for y, row in enumerate(map_data):
             for x, tile in enumerate(row):
                 if tile:
@@ -39,7 +41,9 @@ class Grid():
                     if self.graph.get((x+1, y-1)) is not None:
                         self.graph[(x+1,y-1)].append((x,y))
                         self.graph[(x,y)].append((x+1,y-1))
-
+        
+        for key in self.graph.keys():
+            self.graph[key].sort(key = lambda p: abs(key[0] - p[0]) + abs(key[1] - p[1]), )
         pass
 
 
