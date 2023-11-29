@@ -1,5 +1,6 @@
 import pygame
 from classes.utilities.Spritesheets import Spritesheet
+from classes.utilities.others import distance_from_points
 
 class Entity:
     def __init__(self, x, y):
@@ -27,7 +28,7 @@ class Player(Entity):
         self.drop = drop
         self.camera = None
         self.selected_tile = None
-        self.speed = 0.05
+        self.speed = 0.1
         self.path = list()
         self.tick = 0
 
@@ -51,45 +52,69 @@ class Player(Entity):
         self.tile = tile
         self.x = tile.x + tile.width/2
         self.y = tile.y + tile.height/2 - self.img.get_size()[1]
+        self.tick = 0
         tile.set_player_in_tile(True)
     
     def set_path(self, path):
         if self.next_tile is not None:
             self.next_tile.set_player_in_tile(False)
+        self.tick = 0
         self.path = path if path is not None else list()
 
     def set_selected_tile(self, tile):
         self.selected_tile = tile
     
     def set_facing_dir(self):
+        '''Sets the facing direction of the player. 
+        Returns the string code of the direction.
+        ["UP", "UP LEFT", "UP RIGHT", "LEFT", "RIGHT", "DOWN", "DOWN LEFT", "DONW RIGHT"]'''
         x = self.next_tile.tileID[0] - self.tile.tileID[0]
         y = self.next_tile.tileID[1] - self.tile.tileID[1]
-
+        ret = ""
         if x == -1:
             if y == -1:
                 self.img = self.imgs[4]
+                ret = "UP"
             elif y==0:
                 self.img = self.imgs[5]
+                ret = "UP LEFT"
             elif y == 1:
                 self.img = self.imgs[7]
+                ret = "LEFT"
         elif x == 0:
             if y == -1:
                 self.img = self.imgs[6]
+                ret = "UP RIGHT"
             elif y == 1:
                 self.img = self.imgs[2]
+                ret = "DOWN LEFT"
         elif x == 1:
             if y == -1:
                 self.img = self.imgs[3]
+                ret = "RIGHT"
             elif y==0:
                 self.img = self.imgs[1]
+                ret = "DOWN RIGHT"
             elif y == 1:
                 self.img = self.imgs[0]
+                ret = "DOWN"
+        return ret
 
     def move(self, grid):
         if len(self.path) > 0:
             self.tile.set_player_in_tile(False)
             self.next_tile = grid.get_tile(self.path[0][0], self.path[0][1])
-            self.set_facing_dir()
+
+            dir = self.set_facing_dir()
+
+            distance = distance_from_points((self.tile.x + self.tile.width/2, self.tile.y + self.tile.height/2), (self.next_tile.x + self.next_tile.width/2, (self.next_tile.y + self.next_tile.height/2)))
+            
+            #jumping animation
+            if self.tick < distance/2:
+                self.tick += 0.2
+            elif self.tick > distance/2:
+                self.tick -= 0.2
+
             self.x = self.x * (1 - self.speed) + (self.next_tile.x + self.next_tile.width/2) * (0 + self.speed)
             self.y = self.y * (1 - self.speed) + (self.next_tile.y + self.next_tile.height/2 - self.img.get_size()[1]) * (0 + self.speed)
             self.next_tile.set_player_in_tile(True)
@@ -117,5 +142,5 @@ class Player(Entity):
         img_height = int(self.img.get_rect().h * camera_zoom)
         pos_x = self.x * camera_zoom
         pos_y = self.y * camera_zoom
-        screen.blit(pygame.transform.scale(self.img, (img_width, img_height)), (pos_x + camera_x - self.tile.width/4, pos_y + camera_y))
+        screen.blit(pygame.transform.scale(self.img, (img_width, img_height)), (pos_x + camera_x - self.tile.width/4, pos_y + camera_y - self.tick))
 
