@@ -10,7 +10,7 @@ from classes.utilities.rendering import *
 def main():
     pygame.init()
     pygame.display.set_caption('game base')
-    screen = pygame.display.set_mode((1280, 720), flags=RESIZABLE | NOFRAME)#(pygame.display.Info().current_w/2, pygame.display.Info().current_h/2)
+    screen = pygame.display.set_mode((800, 800), flags=RESIZABLE | NOFRAME)#(pygame.display.Info().current_w/2, pygame.display.Info().current_h/2)
 
     myfont = pygame.font.SysFont("monospace", 15)
     mouse_point = pygame.mouse.get_pos()
@@ -18,7 +18,7 @@ def main():
 
 
     entities = list()
-    grid = Grid(0,0,'resources/level0.txt')
+    grid = Grid(0,0,'resources/level0.txt', camera_zoom=2)
     player = Player(pygame.display.Info().current_w/2, pygame.display.Info().current_h/2, 50, 50, None, 'resources/img/player_spritesheet.png', None)
     player.set_tile(grid.get_tile(0, 0))
     entities.append(player)
@@ -36,8 +36,6 @@ def main():
     while True:
         screen.fill((0,0,0))
         camSys.update(screen, entities, grid)
-        #grid.draw(screen, camera.x, camera.y, camera.zoom)
-        #player.draw(screen, camera.x, camera.y, camera.zoom)
         mouse_pos_label.draw()
         player_pos_label.draw()
 

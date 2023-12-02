@@ -27,8 +27,8 @@ class CameraSys(System):
 
             camera_current_x = entity.camera.world_pos_x
             camera_current_y = entity.camera.world_pos_y
-            camera_target_x = entity.x
-            camera_target_y = entity.y
+            camera_target_x = entity.camera.tracked_entity.x
+            camera_target_y = entity.camera.tracked_entity.y
 
             entity.camera.set_world_pos(camera_current_x * 0.95 + camera_target_x * 0.05, camera_current_y * 0.95 + camera_target_y * 0.05)
 
@@ -37,9 +37,9 @@ class CameraSys(System):
         cam_offset_y = cam_rect.y + cam_rect.h/2 - entity.camera.world_pos_y
         
         for tile in grid.tiles:
-            tile.draw(screen, cam_offset_x, cam_offset_y, 1)
+            tile.draw(screen, cam_offset_x, cam_offset_y, 2)
         for e in entities:
-            e.draw(screen, cam_offset_x, cam_offset_y, 1)
+            e.draw(screen, cam_offset_x, cam_offset_y, 2)
         
         # screen.set_clip(None)
     

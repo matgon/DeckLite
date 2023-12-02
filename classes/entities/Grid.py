@@ -3,7 +3,7 @@ from classes.utilities.Spritesheets import Spritesheet
 import os
 
 class Grid():
-    def __init__(self, grid_x, grid_y, file):
+    def __init__(self, grid_x, grid_y, file, camera_zoom):
         self.pos = [grid_x, grid_y]
         self.tiles = list()
         self.graph = dict()
@@ -13,18 +13,16 @@ class Grid():
         f.close()
         spritesheet = Spritesheet('resources/img/Blocks_Spritesheet.png')
         block_imgs = spritesheet.images_at([(0,0,40,19), (40, 0, 40, 31)], (0,0,0))#, (60,0,80,31)], (0,0,0))
-        #pygame.image.load('resources/img/Blocks_Spritesheet.png').convert_alpha()
 
-        tile_width = 40
-        tile_height = 20
-        def sort_graph(item, coord):
-            return abs(coord[0] - item[0]) + abs(coord[1] - item[1]) 
+        tile_width = 40 * camera_zoom
+        tile_height = 20 * camera_zoom
+
         for y, row in enumerate(map_data):
             for x, tile in enumerate(row):
                 if tile:
                     tile_x = (pygame.display.Info().current_w/2 - tile_width/2) + (x*tile_width/2) - (y*tile_width/2)
                     tile_y = (pygame.display.Info().current_h/3 + tile_height/2) + (x*tile_height/2) + (y*tile_height/2)
-                    self.tiles.append(Tile(tile_x, tile_y, (x, y), tile_width, tile_height, 0, block_imgs))
+                    self.tiles.append(Tile(tile_x, tile_y, (x, y), tile_width, tile_height, 0, block_imgs, camera_zoom))
                     self.graph.update({(x,y): []})
                     if self.graph.get((x, y-1)) is not None:
                         self.graph[(x,y-1)].append((x,y))
@@ -44,8 +42,6 @@ class Grid():
         
         for key in self.graph.keys():
             self.graph[key].sort(key = lambda p: abs(key[0] - p[0]) + abs(key[1] - p[1]), )
-        pass
-
 
     #======================================
     class BFS:
@@ -128,7 +124,7 @@ class Grid():
             tile.draw(screen, camera_x, camera_y, camera_zoom)
 
 class Tile():
-    def __init__(self, x, y, cell, width, height, level, imgs: list[pygame.Surface]):
+    def __init__(self, x, y, cell, width, height, level, imgs: list[pygame.Surface], camera_zoom):
         self.x = x
         self.y = y
         self.tileID = cell
@@ -142,10 +138,9 @@ class Tile():
 
         self.original_top_img = imgs[0]
         self.original_bot_img = imgs[1]
-        #self.original_bottomRight_img = imgs[2]
-        self.top_img = self.original_top_img
-        self.bot_img = self.original_bot_img
-        #self.bottomRight_img = self.original_bottomRight_img
+
+        self.top_img = pygame.transform.scale_by(self.original_top_img, camera_zoom)
+        self.bot_img = pygame.transform.scale_by(self.original_bot_img, camera_zoom)
 
         self.pos_img_x = self.x
         self.pos_img_y = self.y
@@ -166,31 +161,39 @@ class Tile():
         if collide or self.player_in_tile:
             if not self.hover:
                 self.hover = True
-                self.y -= 5
         else:
             if self.hover:
                 self.hover = False
-                self.y += 5
-
     
-    def update_mask(self, x, y, w, h):
-        self.img_mask = pygame.mask.from_surface(pygame.transform.scale(self.original_top_img, (w, h)))
-        self.rect = pygame.Rect(x,y if not self.hover else y+5,w,h)
+    def update_mask(self, pos_x, pos_y):
+        '''Updates the hitbox of the tile if the coordinates had any changes.'''
+        if self.rect.x is not pos_x and self.rect.y is not pos_y:
+            self.img_mask = pygame.mask.from_surface(self.top_img)
+            self.rect = self.top_img.get_rect()
+            self.rect.x = pos_x
+            self.rect.y = pos_y
 
     def check_selected(self, mouse_pos):
         pass
 
     def draw(self, screen: pygame.Surface, camera_x, camera_y, camera_zoom):
-        img_top_width = int(self.top_img.get_rect().w * camera_zoom)
-        img_top_height = int(self.top_img.get_rect().h * camera_zoom)
+        self.top_img = pygame.transform.scale_by(self.original_top_img, camera_zoom)
+        self.bot_img = pygame.transform.scale_by(self.original_bot_img, camera_zoom)
 
-        self.pos_img_x = int((self.x + ((self.tileID[0]-1)*(img_top_width - self.top_img.get_rect().w)/2) - ((self.tileID[1]-1)*(img_top_width - self.top_img.get_rect().w)/2)))
-        self.pos_img_y = int((self.y + ((self.tileID[1]-1)*(img_top_height - self.top_img.get_rect().h)/2) + ((self.tileID[0]-1)*(img_top_width - self.top_img.get_rect().w)/2/2)))
-        
-        self.update_mask(self.pos_img_x + camera_x, self.pos_img_y + camera_y, img_top_width, img_top_height)
+        self.width = 40 * camera_zoom # width of the new tile
+        self.height = 20 * camera_zoom # height of the new tile
 
-        img_bot_width = self.bot_img.get_rect().w * camera_zoom
-        img_bot_height = self.bot_img.get_rect().h * camera_zoom
+        pos_x = self.pos_img_x + camera_x
+        pos_y = self.pos_img_y + camera_y
 
-        screen.blit(pygame.transform.scale(self.original_top_img, (img_top_width, img_top_height)), (self.pos_img_x + camera_x, self.pos_img_y + camera_y))
-        screen.blit(pygame.transform.scale(self.original_bot_img, (img_bot_width, img_bot_height)), (self.pos_img_x + camera_x, self.pos_img_y + camera_y + img_top_height/2))
+        #self.x = pos_x
+        #self.y = pos_y
+
+        self.update_mask(pos_x, pos_y)
+
+        if self.hover:
+            screen.blit(self.top_img, (pos_x, pos_y - 10))
+            screen.blit(self.bot_img, (pos_x, pos_y - 10 + self.height/2))
+        else:
+            screen.blit(self.top_img, (pos_x, pos_y))
+            screen.blit(self.bot_img, (pos_x, pos_y + self.height/2))
