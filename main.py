@@ -6,23 +6,31 @@ from pygame.locals import *
 from classes.entities.Grid import Grid
 from classes.entities.entities import *
 from classes.utilities.rendering import *
+from classes.utilities.others import *
+from classes.entities.Deck import *
 
 def main():
     pygame.init()
     pygame.display.set_caption('game base')
-    screen = pygame.display.set_mode((800, 800), flags=RESIZABLE | NOFRAME)#(pygame.display.Info().current_w/2, pygame.display.Info().current_h/2)
+    screen = pygame.display.set_mode((800, 800), flags=RESIZABLE)#(pygame.display.Info().current_w/2, pygame.display.Info().current_h/2)
 
     myfont = pygame.font.SysFont("monospace", 15)
     mouse_point = pygame.mouse.get_pos()
-    mouse_pos_label = Label(screen, "Mouse: (" + str(mouse_point[0]) + ", " + str(mouse_point[1]) +")", 20, 20, pygame.font.SysFont("monospace", 20), 20)
-
+    mouse_pos_label = Label(screen, "Mouse: (" + str(mouse_point[0]) + ", " + str(mouse_point[1]) +")", 20, 20, pygame.font.Font('resources/fonts/Pixel.ttf', 20), 20)
 
     entities = list()
-    grid = Grid(0,0,'resources/level0.txt', camera_zoom=2)
-    player = Player(pygame.display.Info().current_w/2, pygame.display.Info().current_h/2, 50, 50, None, 'resources/img/player_spritesheet.png', None)
+    ui = list()
+    grid = Grid(0,0,'resources/level0.txt', camera_zoom=1)
+    player = Player(pygame.display.Info().current_w/2, pygame.display.Info().current_h/2, 50, 0, 5, None, 'resources/img/player_spritesheet.png', None, camera_zoom=1)
     player.set_tile(grid.get_tile(0, 0))
+    zombie = Zombie(pygame.display.Info().current_w/2, pygame.display.Info().current_h/2, 20, 6, 2, None, 'resources/img/zombie_spritesheet.png', None, camera_zoom=1)
+    zombie2 = Zombie(pygame.display.Info().current_w/2, pygame.display.Info().current_h/2, 30, 0, 4, None, 'resources/img/zombie_spritesheet.png', None, camera_zoom=1)
+    zombie.set_tile(grid.get_tile(10,10))
+    zombie2.set_tile(grid.get_tile(3,5))
     entities.append(player)
-    player_pos_label = Label(screen, "Player: (" + str(player.tile.x) + ", " + str(player.tile.y) +")", 20, 50, pygame.font.SysFont("monospace", 20), 20)
+    entities.append(zombie)
+    entities.append(zombie2)
+    player_pos_label = Label(screen, "Player: (" + str(player.tile.x) + ", " + str(player.tile.y) +")", 20, 50, pygame.font.Font('resources/fonts/Pixel.ttf', 20), 20)#pygame.font.SysFont("monospace", 20), 20)
 
     #camera init
     camera = Camera(0, 0, screen.get_size()[0], screen.get_size()[1])
@@ -30,12 +38,19 @@ def main():
     player.camera.set_tracked_entity(player)
     camSys = CameraSys()
 
+    player_deck = Deck()
+    player_hand = Hand()
+
+    for i in range(player_hand.max_cards):
+        card = player_hand.draw_card(player_deck)
+        ui.append(card)
+
     mouseButton_down = False
     mouseButton_down_pos = (0,0)
 
     while True:
         screen.fill((0,0,0))
-        camSys.update(screen, entities, grid)
+        camSys.update(screen, entities, grid, ui)
         mouse_pos_label.draw()
         player_pos_label.draw()
 
@@ -49,50 +64,37 @@ def main():
                 if event.key == K_ESCAPE:
                     pygame.quit()
                     sys.exit()
-            if event.type == VIDEORESIZE:
-                grid.resize()
+            # if event.type == VIDEORESIZE:
+            #     grid.resize()
             if event.type == MOUSEBUTTONDOWN and not mouseButton_down:
                 mouseButton_down = True
                 mouseButton_pos = pygame.mouse.get_pos()
-            if event.type == MOUSEBUTTONUP:
+            if event.type == MOUSEBUTTONUP and event.button == 1:
                 mouseButton_down = False
                 mouseButton_pos = pygame.mouse.get_pos()
-                tileSelected, tile = grid.check_selected_tile(mouseButton_pos)
-                if tileSelected:
-                    player.set_path(grid.BFS.BFS_SP(grid.graph, player.tile.tileID, tile.tileID))
+                cardSelected, card = player_hand.check_selected_card(mouseButton_pos)
+                if cardSelected:
+                    if player.use_card(card, grid):
+                        player_hand.use_card(card, player_deck)
+                        card.use()
+                        ui.remove(card)
+                else:
+                    tileSelected, tile = grid.check_selected_tile(mouseButton_pos)
+                    if tileSelected:
+                        player.set_path(grid.BFS.BFS_SP(grid, grid.graph, player.tile.tileID, tile.tileID))
 
             if event.type == MOUSEMOTION and mouseButton_down:
                 #grid.move(mouseButton_down_pos, pygame.mouse.get_pos())
                 mouseButton_pos = pygame.mouse.get_pos()
             if event.type == MOUSEWHEEL:
                 camera.set_zoom(event.y)
-                #grid.zoom(event.y)
             mouse_point = pygame.mouse.get_pos()
         mouse_pos_label.change_text("Mouse: (" + str(mouse_point[0]) + ", " + str(mouse_point[1]) +")")
-        player_pos_label.change_text("Player: (" + str(player.tile.x) + ", " + str(player.tile.y) +")")
-        grid.hover_tile(mouse_point)
+        player_pos_label.change_text("Player: (" + str(player.tile.tileID[0]) + ", " + str(player.tile.tileID[1]) +")")
+        if not player_hand.hover_card(mouse_point):
+            grid.hover_tile(mouse_point)
 
         pygame.display.update()
-
-class Label:
-    ''' CLASS FOR TEXT LABELS ON THE WIN SCREEN SURFACE '''
-    def __init__(self, screen, text, x, y, font, size=20, color="white"):
-        if size != 20:
-            self.font = font
-        else:
-            self.font = font
-        self.image = self.font.render(text, 1, color)
-        _, _, w, h = self.image.get_rect()
-        self.rect = pygame.Rect(x, y, w, h)
-        self.screen = screen
-        self.text = text
-    def change_text(self, newtext, color="white"):
-        self.image = self.font.render(newtext, 1, color)
-    def change_font(self, font, color="white"):
-        self.font = font
-        self.change_text(self.text, color)
-    def draw(self):
-        self.screen.blit(self.image, (self.rect))
 
 if __name__ == "__main__":
     main()

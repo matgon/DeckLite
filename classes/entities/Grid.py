@@ -17,6 +17,8 @@ class Grid():
         tile_width = 40 * camera_zoom
         tile_height = 20 * camera_zoom
 
+        self.camera_zoom = camera_zoom
+
         for y, row in enumerate(map_data):
             for x, tile in enumerate(row):
                 if tile:
@@ -62,7 +64,7 @@ class Grid():
                         visited.append(neighbour)
                         self.queue.append(neighbour)
         
-        def BFS_SP(graph, start, goal):
+        def BFS_SP(grid, graph, start, goal):
             visited = []
             queue = [[start]]
             if start == goal:
@@ -76,12 +78,13 @@ class Grid():
                     neighbours = graph[node]
                     
                     for neighbour in neighbours:
-                        new_path = list(path)
-                        new_path.append(neighbour)
-                        queue.append(new_path)
-                        
-                        if neighbour == goal:
-                            return new_path
+                        if grid.get_tile(neighbour[0], neighbour[1]).obj is None:
+                            new_path = list(path)
+                            new_path.append(neighbour)
+                            queue.append(new_path)
+                            
+                            if neighbour == goal:
+                                return new_path
                     visited.append(node)
         
             print("A connecting path doesn't exist")
@@ -92,6 +95,7 @@ class Grid():
         for tile in self.tiles:
             if tile.tileID == (grid_x, grid_y):
                 return tile
+        return None
 
     def resize(self):
         for tile in self.tiles:
@@ -117,8 +121,19 @@ class Grid():
             if tile.check_mouse_collision(mouse_pos):
                 return True, tile
         return False, None
+    
+    def update_zoom(self):
+        tile_width = 40 * self.camera_zoom
+        tile_height = 20 * self.camera_zoom
+        for tile in self.tiles:
+            tile_x = (pygame.display.Info().current_w/2 - tile_width/2) + (tile.tileID[0]*tile_width/2) - (tile.tileID[1]*tile_width/2)
+            tile_y = (pygame.display.Info().current_h/3 + tile_height/2) + (tile.tileID[0]*tile_height/2) + (tile.tileID[1]*tile_height/2)
+            tile.update_zoom(tile_x, tile_y, self.camera_zoom)
         
     def draw(self, screen, camera_x, camera_y, camera_zoom):
+        if self.camera_zoom != camera_zoom:
+            self.camera_zoom = camera_zoom
+            self.update_zoom()
         for tile in self.tiles:
             #for tile in row:
             tile.draw(screen, camera_x, camera_y, camera_zoom)
@@ -133,12 +148,14 @@ class Tile():
         self.level = level
         self.original_img = imgs
         self.hover = False
-        self.player_in_tile = False
+        self.entity_in_tile = False
+        self.obj = None
         self.scale = (0,0)
 
         self.original_top_img = imgs[0]
         self.original_bot_img = imgs[1]
 
+        self.camera_zoom = camera_zoom
         self.top_img = pygame.transform.scale_by(self.original_top_img, camera_zoom)
         self.bot_img = pygame.transform.scale_by(self.original_bot_img, camera_zoom)
 
@@ -154,16 +171,31 @@ class Tile():
         pos_in_mask = mouse_pos[0] - self.rect.x, mouse_pos[1] - self.rect.y
         return self.rect.collidepoint(mouse_pos) and self.img_mask.get_at(pos_in_mask)
         
-    def set_player_in_tile(self, value):
-        self.player_in_tile = value
+    def set_obj(self, value):
+        self.obj = value
+
+    def set_entity_in_tile(self, value):
+        self.entity_in_tile = value
+        if value:
+            self.hover = True
+        else:
+            self.hover = False
 
     def hover_tile(self, collide):
-        if collide or self.player_in_tile:
+        if collide:
             if not self.hover:
                 self.hover = True
+            if self.entity_in_tile and self.obj is not None:
+                if self.obj.datacard is False:
+                    self.obj.set_datacard(True)
         else:
-            if self.hover:
+            if self.hover and not self.entity_in_tile:
                 self.hover = False
+            if self.entity_in_tile and self.obj is not None:
+                if self.obj.datacard is True:
+                    self.obj.set_datacard(False)
+            # if self.entity_in_tile and self.obj.datacard is True:
+            #     self.obj.set_datacard(False)
     
     def update_mask(self, pos_x, pos_y):
         '''Updates the hitbox of the tile if the coordinates had any changes.'''
@@ -176,6 +208,18 @@ class Tile():
     def check_selected(self, mouse_pos):
         pass
 
+    def update_zoom(self, x, y, camera_zoom):
+        self.camera_zoom = camera_zoom
+        self.width = 40 * self.camera_zoom
+        self.height = 20 * self.camera_zoom
+        self.x = x
+        self.y = y
+        self.top_img = pygame.transform.scale_by(self.original_top_img, self.camera_zoom)
+        self.bot_img = pygame.transform.scale_by(self.original_bot_img, self.camera_zoom)
+        self.pos_img_x = self.x
+        self.pos_img_y = self.y
+        self.update_mask(x, y)
+
     def draw(self, screen: pygame.Surface, camera_x, camera_y, camera_zoom):
         self.top_img = pygame.transform.scale_by(self.original_top_img, camera_zoom)
         self.bot_img = pygame.transform.scale_by(self.original_bot_img, camera_zoom)
@@ -186,14 +230,11 @@ class Tile():
         pos_x = self.pos_img_x + camera_x
         pos_y = self.pos_img_y + camera_y
 
-        #self.x = pos_x
-        #self.y = pos_y
-
         self.update_mask(pos_x, pos_y)
 
         if self.hover:
-            screen.blit(self.top_img, (pos_x, pos_y - 10))
-            screen.blit(self.bot_img, (pos_x, pos_y - 10 + self.height/2))
+            screen.blit(self.top_img, (pos_x, pos_y - 6))
+            screen.blit(self.bot_img, (pos_x, pos_y - 6 + self.height/2))
         else:
             screen.blit(self.top_img, (pos_x, pos_y))
             screen.blit(self.bot_img, (pos_x, pos_y + self.height/2))

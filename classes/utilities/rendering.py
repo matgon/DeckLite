@@ -6,19 +6,21 @@ class System:
         pass
     def check(self, entity):
         return True
-    def update(self, screen, entities, grid):
+    def update(self, screen, entities, grid, ui):
         for entity in entities:
             if self.check(entity):
-                self.update_entity(screen, entity, entities, grid)
+                self.update_entity(screen, entity, entities, grid, ui)
 
 class CameraSys(System):
     def __init__(self):
         super().__init__()
+        self.cam_offset_x = 0
+        self.cam_offset_x = 0
 
     def check(self, entity):
         return entity.camera is not None
 
-    def update_entity(self, screen: pygame.Surface, entity, entities, grid: Grid):
+    def update_entity(self, screen: pygame.Surface, entity, entities, grid: Grid, ui):
         # camera_rect = (100,100, screen.get_size()[0], screen.get_size()[1])
         # screen.set_clip(camera_rect)
         # screen.fill((255,255,255))
@@ -27,19 +29,27 @@ class CameraSys(System):
 
             camera_current_x = entity.camera.world_pos_x
             camera_current_y = entity.camera.world_pos_y
-            camera_target_x = entity.camera.tracked_entity.x
-            camera_target_y = entity.camera.tracked_entity.y
+            camera_target_x = entity.camera.tracked_entity.x + entity.camera.tracked_entity.img.get_width()/2
+            camera_target_y = entity.camera.tracked_entity.y + entity.camera.tracked_entity.img.get_height()/2
 
             entity.camera.set_world_pos(camera_current_x * 0.95 + camera_target_x * 0.05, camera_current_y * 0.95 + camera_target_y * 0.05)
 
         cam_rect = entity.camera.rect
-        cam_offset_x = cam_rect.x + cam_rect.w/2 - entity.camera.world_pos_x
-        cam_offset_y = cam_rect.y + cam_rect.h/2 - entity.camera.world_pos_y
+        self.cam_offset_x = cam_rect.x + cam_rect.w/2 - entity.camera.world_pos_x
+        self.cam_offset_y = cam_rect.y + cam_rect.h/2 - entity.camera.world_pos_y
         
-        for tile in grid.tiles:
-            tile.draw(screen, cam_offset_x, cam_offset_y, 2)
+        # for tile in grid.tiles:
+        grid.draw(screen, self.cam_offset_x, self.cam_offset_y, entity.camera.zoom)
         for e in entities:
-            e.draw(screen, cam_offset_x, cam_offset_y, 2)
+            e.draw(screen, self.cam_offset_x, self.cam_offset_y, entity.camera.zoom)
+        for e in entities:
+            if e.datacard:
+                e.draw(screen, self.cam_offset_x, self.cam_offset_y, entity.camera.zoom)
+
+        cards_offset_x = 0
+        for item in ui:
+            item.draw(screen, screen.get_width()/3 + cards_offset_x, screen.get_height() - item.img.get_height()/2, 1)
+            cards_offset_x += (item.img.get_width() + 10)
         
         # screen.set_clip(None)
     
@@ -58,7 +68,7 @@ class Camera:
 
     def set_tracked_entity(self, entity):
         self.tracked_entity = entity
-        self.set_world_pos(entity.x, entity.y)
+        self.set_world_pos(entity.x + entity.img.get_width()/2, entity.y + entity.img.get_height()/2)
 
     def set_zoom(self, scrolldir):
         if scrolldir > 0:
