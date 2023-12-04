@@ -60,41 +60,53 @@ def main():
             if event.type == QUIT:
                 pygame.quit()
                 sys.exit()
-            if event.type == KEYDOWN:
+            if event.type == KEYDOWN: # quit the game
                 if event.key == K_ESCAPE:
                     pygame.quit()
                     sys.exit()
-            # if event.type == VIDEORESIZE:
-            #     grid.resize()
+            if event.type == VIDEORESIZE: # the screen gets resized
+                update_screen_size(grid, entities, player.camera) 
+
             if event.type == MOUSEBUTTONDOWN and not mouseButton_down:
                 mouseButton_down = True
                 mouseButton_pos = pygame.mouse.get_pos()
-            if event.type == MOUSEBUTTONUP and event.button == 1:
+
+            if event.type == MOUSEBUTTONUP and event.button == 1: #left-clic
                 mouseButton_down = False
                 mouseButton_pos = pygame.mouse.get_pos()
-                cardSelected, card = player_hand.check_selected_card(mouseButton_pos)
+                cardSelected, card = player_hand.check_selected_card(mouseButton_pos) #card selected
+
                 if cardSelected:
                     if player.use_card(card, grid):
                         player_hand.use_card(card, player_deck)
                         card.use()
                         ui.remove(card)
+
                 else:
-                    tileSelected, tile = grid.check_selected_tile(mouseButton_pos)
+                    tileSelected, tile = grid.check_selected_tile(mouseButton_pos) #tile selected
                     if tileSelected:
                         player.set_path(grid.BFS.BFS_SP(grid, grid.graph, player.tile.tileID, tile.tileID))
 
             if event.type == MOUSEMOTION and mouseButton_down:
-                #grid.move(mouseButton_down_pos, pygame.mouse.get_pos())
                 mouseButton_pos = pygame.mouse.get_pos()
-            if event.type == MOUSEWHEEL:
+
+            if event.type == MOUSEWHEEL: #mouse wheel
                 camera.set_zoom(event.y)
-            mouse_point = pygame.mouse.get_pos()
+
+        mouse_point = pygame.mouse.get_pos()
         mouse_pos_label.change_text("Mouse: (" + str(mouse_point[0]) + ", " + str(mouse_point[1]) +")")
         player_pos_label.change_text("Player: (" + str(player.tile.tileID[0]) + ", " + str(player.tile.tileID[1]) +")")
         if not player_hand.hover_card(mouse_point):
             grid.hover_tile(mouse_point)
 
         pygame.display.update()
+
+def update_screen_size(grid, entities, camera):
+    screen = pygame.display.set_mode((pygame.display.Info().current_w, pygame.display.Info().current_h), flags=RESIZABLE)
+    grid.update_screen_size()
+    for e in entities:
+        e.update_screen_size()
+    camera.update_screen_size()
 
 if __name__ == "__main__":
     main()

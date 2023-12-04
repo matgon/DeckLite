@@ -37,7 +37,14 @@ class Entity:
         elif value == False:
             self.datacard_surface = None
 
+    def update_screen_size(self):
+        self.set_tile(self.tile)
+        self.set_speed(0.1 * self.camera_zoom)
+        if self.camera is not None:
+            self.camera.set_world_pos(self.x + self.img.get_width()/2, self.y + self.img.get_height()/2)
+
     def update_zoom(self, camera_zoom):
+        self.camera_zoom = camera_zoom
         self.img = pygame.transform.scale_by(self.current_imgs[self.animation_state], camera_zoom)
         self.set_tile(self.tile)
         self.set_speed(0.1 * camera_zoom)

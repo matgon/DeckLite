@@ -12,7 +12,9 @@ class Grid():
         map_data = [[int(c) for c in row] for row in f.read().split('\n')]
         f.close()
         spritesheet = Spritesheet('resources/img/Blocks_Spritesheet.png')
-        block_imgs = spritesheet.images_at([(0,0,40,19), (40, 0, 40, 31)], (0,0,0))#, (60,0,80,31)], (0,0,0))
+        block_imgs = spritesheet.images_at([(0,0,40,19), (40, 0, 40, 31), (80, 0, 40, 31), (120, 0, 40, 31)], (0,0,0))#, (60,0,80,31)], (0,0,0))
+        block_imgs_1 = [block_imgs[0], block_imgs[1]]
+        block_imgs_2 = [block_imgs[2], block_imgs[3]]
 
         tile_width = 40 * camera_zoom
         tile_height = 20 * camera_zoom
@@ -24,7 +26,10 @@ class Grid():
                 if tile:
                     tile_x = (pygame.display.Info().current_w/2 - tile_width/2) + (x*tile_width/2) - (y*tile_width/2)
                     tile_y = (pygame.display.Info().current_h/3 + tile_height/2) + (x*tile_height/2) + (y*tile_height/2)
-                    self.tiles.append(Tile(tile_x, tile_y, (x, y), tile_width, tile_height, 0, block_imgs, camera_zoom))
+                    if tile == 1:
+                        self.tiles.append(Tile(tile_x, tile_y, (x, y), tile_width, tile_height, 0, block_imgs_1, camera_zoom))
+                    elif tile == 2:
+                        self.tiles.append(Tile(tile_x, tile_y, (x, y), tile_width, tile_height, 0, block_imgs_2, camera_zoom))
                     self.graph.update({(x,y): []})
                     if self.graph.get((x, y-1)) is not None:
                         self.graph[(x,y-1)].append((x,y))
@@ -122,6 +127,9 @@ class Grid():
                 return True, tile
         return False, None
     
+    def update_screen_size(self):
+        self.update_zoom() # updates the screen 
+
     def update_zoom(self):
         tile_width = 40 * self.camera_zoom
         tile_height = 20 * self.camera_zoom
@@ -233,8 +241,8 @@ class Tile():
         self.update_mask(pos_x, pos_y)
 
         if self.hover:
-            screen.blit(self.top_img, (pos_x, pos_y - 6))
-            screen.blit(self.bot_img, (pos_x, pos_y - 6 + self.height/2))
+            screen.blit(self.top_img, (pos_x, pos_y - 3 * camera_zoom))
+            screen.blit(self.bot_img, (pos_x, pos_y - 3 *camera_zoom + self.height/2))
         else:
             screen.blit(self.top_img, (pos_x, pos_y))
             screen.blit(self.bot_img, (pos_x, pos_y + self.height/2))

@@ -66,6 +66,9 @@ class Camera:
         self.world_pos_x = x
         self.world_pos_y = y
 
+    def update_screen_size(self):
+        self.rect = pygame.Rect(0, 0, pygame.display.Info().current_w, pygame.display.Info().current_h)
+
     def set_tracked_entity(self, entity):
         self.tracked_entity = entity
         self.set_world_pos(entity.x + entity.img.get_width()/2, entity.y + entity.img.get_height()/2)
