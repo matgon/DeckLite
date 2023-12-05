@@ -6,10 +6,10 @@ class System:
         pass
     def check(self, entity):
         return True
-    def update(self, screen, entities, grid, ui):
+    def update(self, screen, entities, grid, ui, zoomed):
         for entity in entities:
             if self.check(entity):
-                self.update_entity(screen, entity, entities, grid, ui)
+                self.update_entity(screen, entity, entities, grid, ui, zoomed)
 
 class CameraSys(System):
     def __init__(self):
@@ -20,11 +20,10 @@ class CameraSys(System):
     def check(self, entity):
         return entity.camera is not None
 
-    def update_entity(self, screen: pygame.Surface, entity, entities, grid: Grid, ui):
+    def update_entity(self, screen: pygame.Surface, entity, entities, grid: Grid, ui, zoomed):
         # camera_rect = (100,100, screen.get_size()[0], screen.get_size()[1])
         # screen.set_clip(camera_rect)
         # screen.fill((255,255,255))
-
         if entity.camera.tracked_entity is not None:
 
             camera_current_x = entity.camera.world_pos_x
@@ -50,6 +49,9 @@ class CameraSys(System):
         for item in ui:
             item.draw(screen, screen.get_width()/3 + cards_offset_x, screen.get_height() - item.img.get_height()/2, 1)
             cards_offset_x += (item.img.get_width() + 10)
+        
+        if zoomed:
+            entity.camera.set_world_pos(entity.camera.tracked_entity.x + entity.camera.tracked_entity.img.get_width()/2, entity.camera.tracked_entity.y + entity.camera.tracked_entity.img.get_height()/2)
         
         # screen.set_clip(None)
     

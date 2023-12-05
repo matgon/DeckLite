@@ -47,10 +47,12 @@ def main():
 
     mouseButton_down = False
     mouseButton_down_pos = (0,0)
+    zoomed = False
 
     while True:
         screen.fill((0,0,0))
-        camSys.update(screen, entities, grid, ui)
+        camSys.update(screen, entities, grid, ui, zoomed)
+        zoomed = False
         mouse_pos_label.draw()
         player_pos_label.draw()
 
@@ -92,6 +94,8 @@ def main():
 
             if event.type == MOUSEWHEEL: #mouse wheel
                 camera.set_zoom(event.y)
+                zoomed = True
+
 
         mouse_point = pygame.mouse.get_pos()
         mouse_pos_label.change_text("Mouse: (" + str(mouse_point[0]) + ", " + str(mouse_point[1]) +")")
