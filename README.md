@@ -1,6 +1,6 @@
 # DeckLite 🚧 *(En desarrollo)*
 
-DeckLite es una aplicación desarrollada en Python que simula un juego de cartas ligero. Este proyecto está **en proceso de desarrollo** y aún no se encuentra finalizado. Su objetivo es proporcionar una estructura básica para juegos de cartas, permitiendo la expansión y personalización en versiones futuras.
+DeckLite es  un proyecto personal sobre una aplicación desarrollada en Python que simula un juego de cartas ligero. Este proyecto está **en proceso de desarrollo** y aún no se encuentra finalizado. Su objetivo es proporcionar una estructura básica para juegos de cartas, permitiendo la expansión y personalización en versiones futuras.
 
 ## 📁 Estructura del Proyecto
 
